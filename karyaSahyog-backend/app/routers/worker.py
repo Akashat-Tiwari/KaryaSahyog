@@ -1,11 +1,11 @@
 from fastapi import APIRouter
-from typing import List
+from typing import List, Union
 from app.schemas.worker import WorkerStatusResponse, JobActionRequest
 
 router = APIRouter()
 
 @router.get("/{worker_id}/status", response_model=WorkerStatusResponse)
-def get_worker_status(worker_id: int):
+def get_worker_status(worker_id: Union[int, str]):
     return {
         "worker_id": worker_id,
         "name": "Ramesh Kumar",
@@ -44,7 +44,9 @@ def get_nearby_workers(lat: float, lng: float):
 
 @router.post("/job-action")
 def respond_to_job(action: JobActionRequest):
+    identifier = action.job_id or action.booking_id or "unknown"
     return {
         "status": "success",
-        "message": f"Job {action.booking_id} has been {action.action.lower()}ed."
+        "message": f"Job {identifier} has been {action.action.lower()}ed."
     }
+
