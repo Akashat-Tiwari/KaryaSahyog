@@ -19,7 +19,10 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(customer.router, prefix="/api/v1/customer", tags=["Customer Module"])
 app.include_router(worker.router, prefix="/api/v1/worker", tags=["Worker Module"])
+app.include_router(worker.router, prefix="/worker", tags=["Worker Module (Direct)"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin & AI Module"])
+app.include_router(admin.router, prefix="/admin", tags=["Admin Module (Direct)"])
+app.include_router(admin.router, tags=["Admin Direct"])
 
 @app.get("/")
 def root():
