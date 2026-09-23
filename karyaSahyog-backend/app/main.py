@@ -1,29 +1,26 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, customer, worker, admin
+from app.database import engine
+from app import models
+from app.routers import auth, worker, customer, admin
+
+# Build tables automatically in Neon PostgreSQL
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="KaryaSahyog API Engine",
-    description="Backend REST APIs for KaryaSahyog - Cooperative Gig Services Platform (SIH 2026)",
+    description="Backend API services for KaryaSahyog platform",
     version="1.0.0"
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
-app.include_router(customer.router, prefix="/api/v1/customer", tags=["Customer Module"])
-app.include_router(worker.router, prefix="/api/v1/worker", tags=["Worker Module"])
-app.include_router(worker.router, prefix="/worker", tags=["Worker Module (Direct)"])
-app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin & AI Module"])
-app.include_router(admin.router, prefix="/admin", tags=["Admin Module (Direct)"])
-app.include_router(admin.router, tags=["Admin Direct"])
+app.include_router(worker.router, prefix="/api/v1/worker", tags=["Worker Operations"])
+app.include_router(customer.router, prefix="/api/v1/customer", tags=["Customer Operations"])
+app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin Operations"])
 
 @app.get("/")
-def root():
-    return {"status": "online", "message": "KaryaSahyog API Engine Operational"}
+def read_root():
+    return {
+        "status": "online",
+        "message": "KaryaSahyog API Engine Operational",
+        "database": "Connected to Neon PostgreSQL"
+    }
