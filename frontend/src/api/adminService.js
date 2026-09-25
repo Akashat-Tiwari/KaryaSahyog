@@ -26,11 +26,11 @@ async function fetchAdminEndpoint(endpointPath, options = {}) {
   for (const url of candidates) {
     try {
       const res = await fetch(url, {
+        ...options,
         headers: {
           Accept: 'application/json',
           ...options.headers,
         },
-        ...options,
       });
 
       if (res.ok) {
