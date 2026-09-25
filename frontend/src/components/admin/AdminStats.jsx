@@ -27,11 +27,14 @@ export default function AdminStats() {
       try {
         const data = await getStats();
         if (isMounted && data) {
+          // Backend GET /api/v1/admin/stats returns active_workers, total_users,
+          // completed_bookings and revenue_inr; accept both naming styles.
+          const jobsCompleted = data.total_jobs_completed ?? data.completed_bookings;
           setStatsData({
-            total_active_workers: data.total_active_workers ?? DEFAULT_STATS.total_active_workers,
-            total_customers: data.total_customers ?? (data.total_jobs_completed ? Math.round(data.total_jobs_completed * 2.8) : DEFAULT_STATS.total_customers),
-            total_jobs_completed: data.total_jobs_completed ?? DEFAULT_STATS.total_jobs_completed,
-            cooperative_federation_earnings: data.cooperative_federation_earnings ?? DEFAULT_STATS.cooperative_federation_earnings,
+            total_active_workers: data.total_active_workers ?? data.active_workers ?? DEFAULT_STATS.total_active_workers,
+            total_customers: data.total_customers ?? data.total_users ?? (jobsCompleted ? Math.round(jobsCompleted * 2.8) : DEFAULT_STATS.total_customers),
+            total_jobs_completed: jobsCompleted ?? DEFAULT_STATS.total_jobs_completed,
+            cooperative_federation_earnings: data.cooperative_federation_earnings ?? data.revenue_inr ?? DEFAULT_STATS.cooperative_federation_earnings,
             worker_welfare_fund_pool: data.worker_welfare_fund_pool ?? DEFAULT_STATS.worker_welfare_fund_pool,
           });
         }

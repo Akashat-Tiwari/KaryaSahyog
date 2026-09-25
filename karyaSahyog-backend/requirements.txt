@@ -13,3 +13,17 @@ starlette==1.6.0
 typing-inspection==0.4.4
 typing_extensions==4.16.0
 uvicorn==0.52.4
+
+# Database
+SQLAlchemy==2.1.0
+psycopg2-binary==2.9.13
+python-dotenv==1.2.3
+
+# Demand forecasting model (models/*.pkl). scikit-learn must match the version
+# the preprocessor was pickled with (1.9.0), or loading it may fail.
+joblib==1.6.0
+numpy==2.5.3
+pandas==3.0.6
+scikit-learn==1.9.0
+scipy==1.18.1
+xgboost==3.4.1
