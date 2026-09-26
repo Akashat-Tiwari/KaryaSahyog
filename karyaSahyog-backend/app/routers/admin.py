@@ -1,5 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+
+from app.database import get_db
+from app import models
 from src.predict import predict_demand
 
 router = APIRouter()
@@ -11,7 +16,6 @@ class DemandForecastRequest(BaseModel):
     service_type: str
     price_tier: str
     weather_condition: str
-    
     is_weekend: int
     month: int
     is_holiday_or_festival: int
@@ -29,12 +33,19 @@ class DemandForecastRequest(BaseModel):
     worker_demand_ratio: float
 
 @router.get("/stats")
-def get_admin_stats():
+def get_admin_stats(db: Session = Depends(get_db)):
+    total_users = db.query(models.User).count()
+    active_workers = db.query(models.Worker).filter(models.Worker.status == "available").count()
+    completed_bookings = db.query(models.Booking).filter(models.Booking.status == "completed").count()
+    
+    revenue_result = db.query(func.sum(models.Booking.amount)).filter(models.Booking.status == "completed").scalar()
+    revenue_inr = float(revenue_result) if revenue_result is not None else 0.0
+    
     return {
-        "total_users": 1250,
-        "active_workers": 340,
-        "completed_bookings": 8920,
-        "revenue_inr": 450000.00
+        "total_users": total_users,
+        "active_workers": active_workers,
+        "completed_bookings": completed_bookings,
+        "revenue_inr": revenue_inr
     }
 
 @router.post("/demand-forecast")

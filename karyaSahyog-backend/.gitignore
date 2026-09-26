@@ -13,3 +13,8 @@ env/
 
 # OS generated files
 .DS_Store
+
+nohup.out
+venv/
+__pycache__/
+.env
