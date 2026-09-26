@@ -3,7 +3,7 @@
  * Connects Admin Dashboard components to the FastAPI backend.
  */
 
-const RAW_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const RAW_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 // Strip trailing slashes
 const BASE_URL = RAW_BASE_URL.replace(/\/+$/, '');
 
@@ -19,6 +19,9 @@ async function fetchAdminEndpoint(endpointPath, options = {}) {
     `${BASE_URL}/admin${cleanPath}`,
     `${BASE_URL}${cleanPath}`
   ];
+  if (!BASE_URL.includes('/api/v1')) {
+    candidates.push(`${BASE_URL}/api/v1/admin${cleanPath}`);
+  }
 
   let lastError = null;
 
