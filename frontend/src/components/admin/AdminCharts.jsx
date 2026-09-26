@@ -147,7 +147,10 @@ export default function AdminCharts() {
   }, []);
 
   useEffect(() => {
-    loadForecast(selectedService);
+    const fetchForecast = async () => {
+      await loadForecast(selectedService);
+    };
+    fetchForecast();
   }, [selectedService, loadForecast]);
 
   return (

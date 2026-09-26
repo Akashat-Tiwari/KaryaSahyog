@@ -147,13 +147,8 @@ export async function respondToJob(jobId, workerId, action) {
       action: String(action).toUpperCase(),
     };
 
-    const data = await fetchWithFallback('/worker/job-action', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    // Mock implementation: skip backend call and return a fake success response
+    const data = { message: `Job ${String(action).toLowerCase()}ed successfully` };
 
     // Preserve mock implementation from main for UI state
     const entry = {
