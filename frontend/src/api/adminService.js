@@ -16,9 +16,8 @@ async function fetchAdminEndpoint(endpointPath, options = {}) {
 
   // Candidate paths to try for compatibility with direct or prefixed FastAPI routers
   const candidates = [
-    `${BASE_URL}${cleanPath}`,
     `${BASE_URL}/admin${cleanPath}`,
-    `${BASE_URL}/api/v1/admin${cleanPath}`,
+    `${BASE_URL}${cleanPath}`
   ];
 
   let lastError = null;
@@ -72,14 +71,44 @@ export async function getStats() {
 
 /**
  * Fetch AI demand forecast and predictive surge data
- * Endpoint: GET /demand-forecast
+ * Endpoint: POST /demand-forecast (or /api/v1/admin/demand-forecast)
  *
- * @returns {Promise<Object>} Demand forecast data
+ * @param {Object} [customParams={}] - Optional overrides for prediction features
+ * @returns {Promise<Object>} Demand forecast data from XGBoost ML engine
  */
-export async function getDemandForecast() {
+export async function getDemandForecast(customParams = {}) {
   try {
+    const payload = {
+      day_of_week: 'Monday',
+      zone_id: 'Zone_3',
+      zone_density_tier: 'High',
+      service_type: 'AC Repair',
+      price_tier: 'Standard',
+      weather_condition: 'Hot',
+      is_weekend: 0,
+      month: new Date().getMonth() + 1,
+      is_holiday_or_festival: 0,
+      temperature_c: 32.5,
+      num_available_workers: 35,
+      avg_zone_worker_rating: 4.8,
+      promo_active: 1,
+      past_7day_avg_bookings: 120.0,
+      avg_response_time_min: 4.5,
+      cancellation_rate: 0.03,
+      lag_1: 115.0,
+      lag_7: 110.0,
+      rolling_14: 105.0,
+      rolling_30: 98.0,
+      worker_demand_ratio: 1.2,
+      ...customParams,
+    };
+
     const data = await fetchAdminEndpoint('/demand-forecast', {
-      method: 'GET',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     });
     return data;
   } catch (error) {

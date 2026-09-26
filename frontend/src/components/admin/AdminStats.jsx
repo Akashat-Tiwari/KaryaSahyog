@@ -27,12 +27,18 @@ export default function AdminStats() {
       try {
         const data = await getStats();
         if (isMounted && data) {
+          const activeWorkers = data.active_workers ?? data.total_active_workers ?? DEFAULT_STATS.total_active_workers;
+          const totalCustomers = data.total_users ?? data.total_customers ?? DEFAULT_STATS.total_customers;
+          const completedJobs = data.completed_bookings ?? data.total_jobs_completed ?? DEFAULT_STATS.total_jobs_completed;
+          const earnings = data.revenue_inr ?? data.cooperative_federation_earnings ?? DEFAULT_STATS.cooperative_federation_earnings;
+          const welfareFund = data.worker_welfare_fund_pool ?? (earnings ? Math.round(earnings * 0.20) : DEFAULT_STATS.worker_welfare_fund_pool);
+
           setStatsData({
-            total_active_workers: data.total_active_workers ?? DEFAULT_STATS.total_active_workers,
-            total_customers: data.total_customers ?? (data.total_jobs_completed ? Math.round(data.total_jobs_completed * 2.8) : DEFAULT_STATS.total_customers),
-            total_jobs_completed: data.total_jobs_completed ?? DEFAULT_STATS.total_jobs_completed,
-            cooperative_federation_earnings: data.cooperative_federation_earnings ?? DEFAULT_STATS.cooperative_federation_earnings,
-            worker_welfare_fund_pool: data.worker_welfare_fund_pool ?? DEFAULT_STATS.worker_welfare_fund_pool,
+            total_active_workers: activeWorkers,
+            total_customers: totalCustomers,
+            total_jobs_completed: completedJobs,
+            cooperative_federation_earnings: earnings,
+            worker_welfare_fund_pool: welfareFund,
           });
         }
       } catch (err) {

@@ -136,7 +136,7 @@ export default function WorkerProfile() {
     try {
       setLoading(true);
       setFetchError(null);
-      const data = await getWorkerStatus('worker_123');
+      const data = await getWorkerStatus(localStorage.getItem('worker_id') ?? 1);
       if (data) {
         setProfile(mapBackendData(data));
       }
@@ -154,7 +154,7 @@ export default function WorkerProfile() {
 
     async function loadInitialStatus() {
       try {
-        const data = await getWorkerStatus('worker_123');
+        const data = await getWorkerStatus(localStorage.getItem('worker_id') ?? 1);
         if (isMounted && data) {
           setProfile(mapBackendData(data));
         }

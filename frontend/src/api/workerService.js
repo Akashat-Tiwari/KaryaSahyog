@@ -46,8 +46,7 @@ async function fetchWithFallback(path, options = {}) {
 
   // Otherwise, prioritize the live FastAPI mounted prefix /api/v1/worker, then fallback
   const endpointsToTry = [
-    `${BASE_URL}/api/v1${cleanPath}`,
-    `${BASE_URL}${cleanPath}`,
+    `${BASE_URL}${cleanPath}`
   ];
 
   let lastError = null;
@@ -106,18 +105,19 @@ export async function getWorkerStatus(workerId) {
  * @param {'accept'|'reject'|'ACCEPT'|'REJECT'} action - Action taken
  * @returns {Promise<Object>} Action response confirmation
  */
-export async function respondToJob(jobId, workerId, action) {
+
+/*export async function respondToJob(jobId, workerId, action) {
   try {
     const sanitizedId = sanitizeWorkerId(workerId);
     const sanitizedJob = sanitizeJobId(jobId);
+    // Payload matches backend schema (includes booking_id)
+   const payload = {
+   job_id: sanitizedJob,      // numeric job ID
+   booking_id: sanitizedJob,  // same value for booking lookup
+   worker_id: sanitizedId,
+   action: String(action).toUpperCase(),
+   };
 
-    // Provide both job_id and booking_id for universal FastAPI schema compatibility
-    const payload = {
-      job_id: jobId,
-      booking_id: sanitizedJob,
-      worker_id: sanitizedId,
-      action: String(action).toUpperCase(),
-    };
 
     const data = await fetchWithFallback('/worker/job-action', {
       method: 'POST',
@@ -133,4 +133,24 @@ export async function respondToJob(jobId, workerId, action) {
     console.error(`[WorkerService] Error responding to job '${jobId}':`, error);
     throw error;
   }
+}
+*/
+export async function respondToJob(jobId, workerId, action) {
+  // Mock implementation: store action in localStorage and return a fake success response
+  const entry = {
+    jobId,
+    workerId,
+    action: String(action).toUpperCase(),
+    timestamp: new Date().toISOString(),
+  };
+  const existing = JSON.parse(localStorage.getItem('bookingHistory') || '[]');
+  existing.push(entry);
+  localStorage.setItem('bookingHistory', JSON.stringify(existing));
+  // Return a mock object compatible with UI expectations
+  return { message: `Job ${entry.action.toLowerCase()}ed successfully` };
+}
+
+// Helper to retrieve booking history from localStorage
+export function getBookingHistory() {
+  return JSON.parse(localStorage.getItem('bookingHistory') || '[]');
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -24,8 +24,22 @@ import {
   PieChart as PieIcon,
   Sparkles,
   Info,
+  Loader2,
 } from 'lucide-react';
 import { getDemandForecast } from '../../api/adminService';
+
+// AI Demand Model Supported Service Types
+const AVAILABLE_SERVICES = [
+  { id: 'AC Repair', label: 'AC Repair & Maintenance' },
+  { id: 'Electrical Repair', label: 'Electrical Repair' },
+  { id: 'Plumbing Repair', label: 'Plumbing Repair' },
+  { id: 'Home Cleaning', label: 'Home Cleaning' },
+  { id: 'Cooking/Catering', label: 'Cooking & Catering' },
+  { id: 'Babysitting/Childcare', label: 'Babysitting / Childcare' },
+  { id: 'Elderly Care', label: 'Elderly Care' },
+  { id: 'Gardening/Landscaping', label: 'Gardening & Landscaping' },
+  { id: 'Laundry/Ironing', label: 'Laundry & Ironing' },
+];
 
 // 1. Daily Booking Trends (Last 7 Days)
 const BOOKING_TRENDS_DATA = [
@@ -87,6 +101,8 @@ const tooltipStyle = {
 };
 
 export default function AdminCharts() {
+  const [selectedService, setSelectedService] = useState('AC Repair');
+  const [loadingForecast, setLoadingForecast] = useState(false);
   const [forecastMeta, setForecastMeta] = useState({
     high_demand_region: 'Zone 3 - Downtown',
     predicted_service_surge: 'AC Repair & Maintenance',
@@ -96,42 +112,43 @@ export default function AdminCharts() {
 
   const [aiChartData, setAiChartData] = useState(DEFAULT_AI_FORECAST_DATA);
 
-  useEffect(() => {
-    let isMounted = true;
+  const loadForecast = useCallback(async (serviceId) => {
+    try {
+      setLoadingForecast(true);
+      const serviceObj = AVAILABLE_SERVICES.find((s) => s.id === serviceId);
+      const serviceLabel = serviceObj ? serviceObj.label : serviceId;
 
-    async function loadForecast() {
-      try {
-        const data = await getDemandForecast();
-        if (isMounted && data) {
-          setForecastMeta({
-            high_demand_region: data.high_demand_region || 'Zone 3 - Downtown',
-            predicted_service_surge: data.predicted_service_surge || 'AC Repair & Maintenance',
-            recommended_worker_shifts: data.recommended_worker_shifts || 35,
-            confidence_score: data.confidence_score || 0.89,
-          });
+      const data = await getDemandForecast({ service_type: serviceId });
+      if (data) {
+        const predictedDemand = data.predicted_demand != null ? Number(data.predicted_demand) : null;
+        const shifts = data.recommended_worker_shifts || (predictedDemand ? Math.max(12, Math.round(predictedDemand * 8)) : 35);
 
-          // Scale predictions based on backend recommended shifts surge index
-          const surgeFactor = 1 + ((data.recommended_worker_shifts || 35) / 100);
-          setAiChartData(
-            DEFAULT_AI_FORECAST_DATA.map((item) => ({
-              ...item,
-              predicted: Math.round(item.historical * (surgeFactor > 1.15 ? surgeFactor : 1.25)),
-            }))
-          );
-        }
-      } catch (err) {
-        if (isMounted) {
-          console.warn('[AdminCharts] Fetching forecast failed, using cached model:', err);
-        }
+        setForecastMeta({
+          high_demand_region: data.high_demand_region || 'Zone 3 - Downtown',
+          predicted_service_surge: serviceLabel,
+          recommended_worker_shifts: shifts,
+          confidence_score: data.confidence_score || 0.91,
+        });
+
+        // Scale predictions based on backend recommended shifts surge index
+        const surgeFactor = 1 + (shifts / 100);
+        setAiChartData(
+          DEFAULT_AI_FORECAST_DATA.map((item) => ({
+            ...item,
+            predicted: Math.round(item.historical * (surgeFactor > 1.15 ? surgeFactor : 1.25)),
+          }))
+        );
       }
+    } catch (err) {
+      console.warn('[AdminCharts] Fetching forecast failed, using cached model:', err);
+    } finally {
+      setLoadingForecast(false);
     }
-
-    loadForecast();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
+
+  useEffect(() => {
+    loadForecast(selectedService);
+  }, [selectedService, loadForecast]);
 
   return (
     <div className="space-y-4">
@@ -347,7 +364,7 @@ export default function AdminCharts() {
 
         {/* CHART 5: AI Forecast (ComposedChart) connected to FastAPI backend */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5 shadow-sm flex flex-col justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
             <div>
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center">
@@ -362,9 +379,29 @@ export default function AdminCharts() {
               </p>
             </div>
 
-            <span className="text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-0.5 rounded">
-              High-Demand Region: {forecastMeta.high_demand_region}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 text-xs">
+                <label htmlFor="service-forecast-select" className="text-gray-500 font-medium">Job:</label>
+                <select
+                  id="service-forecast-select"
+                  value={selectedService}
+                  onChange={(e) => setSelectedService(e.target.value)}
+                  disabled={loadingForecast}
+                  className="bg-transparent font-semibold text-gray-800 focus:outline-none cursor-pointer"
+                >
+                  {AVAILABLE_SERVICES.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+                {loadingForecast && <Loader2 className="w-3.5 h-3.5 text-purple-600 animate-spin ml-1" />}
+              </div>
+
+              <span className="text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-lg">
+                Region: {forecastMeta.high_demand_region}
+              </span>
+            </div>
           </div>
 
           <div className="h-72 w-full">
